@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accessible Circular Time Watcher</title>
+    <meta name="description" content="An accessible circular time display showing hours, minutes, and seconds">
+    <style>
+        :root {
+            --primary-color: #00aaff;
+            --secondary-color: #ff3366;
+            --background-color: #000;
+            --text-color: #fff;
+            --highlight-color: #00ccff;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            color: var(--text-color);
+        }
+        
+        .time-container {
+            position: relative;
+            width: 90vmin;
+            height: 90vmin;
+            max-width: 500px;
+            max-height: 500px;
+        }
+        
+        .circle {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .outer-circle {
+            box-shadow: 0 0 30px rgba(0, 150, 255, 0.5);
+            border: 2px solid rgba(0, 150, 255, 0.3);
+        }
+        
+        .middle-circle {
+            width: 90%;
+            height: 90%;
+            border: 2px solid rgba(0, 150, 255, 0.2);
+            box-shadow: inset 0 0 20px rgba(0, 150, 255, 0.3);
+        }
+        
+        .inner-circle {
+            width: 80%;
+            height: 80%;
+            background-color: rgba(0, 20, 40, 0.7);
+            box-shadow: 0 0 10px rgba(0, 150, 255, 0.8);
+            flex-direction: column;
+        }
+        
+        .time-display {
+            color: var(--primary-color);
+            text-align: center;
+            text-shadow: 0 0 10px rgba(0, 170, 255, 0.7);
+        }
+        
+        .time {
+            font-size: clamp(2rem, 8vmin, 4rem);
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .date {
+            font-size: clamp(0.8rem, 3vmin, 1.2rem);
+            opacity: 0.8;
+        }
+        
+        .hour-markers {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .marker {
+            position: absolute;
+            width: 2px;
+            height: 10px;
+            background-color: rgba(0, 150, 255, 0.5);
+            left: 50%;
+            transform-origin: bottom center;
+        }
+        
+        .second-hand, .minute-hand, .hour-hand {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            transform-origin: bottom center;
+            border-radius: 5px;
+        }
+        
+        .second-hand {
+            width: 2px;
+            height: 40%;
+            background-color: var(--secondary-color);
+            box-shadow: 0 0 5px var(--secondary-color);
+            transform: translateX(-50%) rotate(0deg);
+        }
+        
+        .minute-hand {
+            width: 4px;
+            height: 35%;
+            background-color: var(--highlight-color);
+            box-shadow: 0 0 5px var(--highlight-color);
+            transform: translateX(-50%) rotate(0deg);
+        }
+        
+        .hour-hand {
+            width: 6px;
+            height: 25%;
+            background-color: var(--text-color);
+            box-shadow: 0 0 5px var(--text-color);
+            transform: translateX(-50%) rotate(0deg);
+        }
+        
+        .center-dot {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: var(--text-color);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px var(--text-color);
+            z-index: 10;
+        }
+        
+        .accessibility-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid var(--primary-color);
+        }
+        
+        .accessibility-button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            margin: 2px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .high-contrast {
+            --primary-color: #ffff00;
+            --secondary-color: #ff0000;
+            --background-color: #000;
+            --text-color: #fff;
+            --highlight-color: #00ffff;
+        }
+        
+        .dark-mode {
+            --primary-color: #00ff00;
+            --secondary-color: #ff00ff;
+            --background-color: #121212;
+            --text-color: #e0e0e0;
+            --highlight-color: #00ffff;
+        }
+        
+        .light-mode {
+            --primary-color: #0000ff;
+            --secondary-color: #ff0000;
+            --background-color: #ffffff;
+            --text-color: #000000;
+            --highlight-color: #0066ff;
+        }
+        
+        .screen-reader-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        
+        @media (prefers-reduced-motion: reduce) {
+            .second-hand, .minute-hand, .hour-hand {
+                transition: none !important;
+            }
+        }
+        
+        @media screen and (max-width: 600px) {
+            .time-container {
+                width: 80vmin;
+                height: 80vmin;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="time-container" role="timer" aria-live="polite" aria-atomic="true">
+        <span id="screen-reader-time" class="screen-reader-only"></span>
+        <div class="circle outer-circle"></div>
+        <div class="circle middle-circle"></div>
+        
+        <div class="hour-markers" id="markers" aria-hidden="true"></div>
+        
+        <div class="second-hand" id="second-hand" aria-hidden="true"></div>
+        <div class="minute-hand" id="minute-hand" aria-hidden="true"></div>
+        <div class="hour-hand" id="hour-hand" aria-hidden="true"></div>
+        <div class="center-dot" aria-hidden="true"></div>
+        
+        <div class="circle inner-circle">
+            <div class="time-display">
+                <div class="time" id="digital-time" aria-hidden="true">00:00:00</div>
+                <div class="date" id="date" aria-hidden="true">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="accessibility-panel">
+        <button class="accessibility-button" id="high-contrast-btn">High Contrast</button>
+        <button class="accessibility-button" id="dark-mode-btn">Dark Mode</button>
+        <button class="accessibility-button" id="light-mode-btn">Light Mode</button>
+        <button class="accessibility-button" id="reset-btn">Reset Colors</button>
+    </div>
+
+    <script>
+        // Create hour markers
+        const markersContainer = document.getElementById('markers');
+        for (let i = 0; i < 12; i++) {
+            const marker = document.createElement('div');
+            marker.className = 'marker';
+            marker.style.transform = `translateX(-50%) rotate(${i * 30}deg) translateY(-140px)`;
+            markersContainer.appendChild(marker);
+        }
+        
+        // Update time function with accessibility features
+        function updateTime() {
+            const now = new Date();
+            
+            // Digital time display
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+            const timeString = `${hours}:${minutes}:${seconds}`;
+            document.getElementById('digital-time').textContent = timeString;
+            
+            // Screen reader time
+            const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+            const hours12 = now.getHours() % 12 || 12;
+            const screenReaderTime = `The time is ${hours12}:${minutes} ${ampm}`;
+            document.getElementById('screen-reader-time').textContent = screenReaderTime;
+            
+            // Date display
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const dateString = now.toLocaleDateString('en-US', options);
+            document.getElementById('date').textContent = dateString;
+            
+            // Analog clock hands
+            const secondDegrees = (now.getSeconds() / 60) * 360;
+            const minuteDegrees = (now.getMinutes() / 60) * 360 + (now.getSeconds() / 60) * 6;
+            const hourDegrees = (now.getHours() / 12) * 360 + (now.getMinutes() / 60) * 30;
+            
+            document.getElementById('second-hand').style.transform = `translateX(-50%) rotate(${secondDegrees}deg)`;
+            document.getElementById('minute-hand').style.transform = `translateX(-50%) rotate(${minuteDegrees}deg)`;
+            document.getElementById('hour-hand').style.transform = `translateX(-50%) rotate(${hourDegrees}deg)`;
+        }
+        
+        // Accessibility controls
+        document.getElementById('high-contrast-btn').addEventListener('click', () => {
+            document.body.classList.add('high-contrast');
+            document.body.classList.remove('dark-mode', 'light-mode');
+        });
+        
+        document.getElementById('dark-mode-btn').addEventListener('click', () => {
+            document.body.classList.add('dark-mode');
+            document.body.classList.remove('high-contrast', 'light-mode');
+        });
+        
+        document.getElementById('light-mode-btn').addEventListener('click', () => {
+            document.body.classList.add('light-mode');
+            document.body.classList.remove('high-contrast', 'dark-mode');
+        });
+        
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            document.body.classList.remove('high-contrast', 'dark-mode', 'light-mode');
+        });
+        
+        // Check for prefers-reduced-motion
+        const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+        if (motionQuery.matches) {
+            document.querySelectorAll('.second-hand, .minute-hand, .hour-hand').forEach(el => {
+                el.style.transition = 'none';
+            });
+        }
+        
+        // Update time immediately and then every second
+        updateTime();
+        setInterval(updateTime, 1000);
+        
+        // Make the clock focusable for keyboard users
+        document.querySelector('.time-container').setAttribute('tabindex', '0');
+    </script>
+</body>
+</html>
